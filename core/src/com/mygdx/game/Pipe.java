@@ -14,15 +14,12 @@ public class Pipe extends Actor {
     {
         setSize(64, 230);
         bounds = new Rectangle();
-        setVisible(false);
     }
     @Override
     public void act(float delta)
     {
         moveBy(-200 * delta, 0);
         bounds.set(getX(), getY(), getWidth(), getHeight());
-        if(!isVisible())
-            setVisible(true);
         if (getX() < -64)
             remove();
     }

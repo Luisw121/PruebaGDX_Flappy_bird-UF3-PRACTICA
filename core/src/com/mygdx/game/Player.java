@@ -10,7 +10,10 @@ public class Player extends Actor {
     Rectangle bounds; //
     AssetManager manager;
     float speedy, gravity;
-    boolean invincible;
+    private boolean invincible;
+    private static final float INVINCIBILITY_DURATION = 6.0f; // Duración de la invencibilidad en segundos
+    private float invincibilityTimer; // Temporizador para rastrear la duración de la invencibilidad
+
     Player()
     {
         setX(200);
@@ -24,12 +27,20 @@ public class Player extends Actor {
     }
     public void activateInvincibility() {
         invincible = true;
+        invincibilityTimer = INVINCIBILITY_DURATION;
     }
     public void desactivateInvincibility() {
         invincible = false;
     }
     @Override
     public void act(float delta) {
+        if (invincible) {
+            invincibilityTimer -= delta;
+            if (invincibilityTimer <= 0) {
+                invincible = false;
+                invincibilityTimer = 0;
+            }
+        }
         //Actualitza la posició del jugador amb la velocitat vertical
         moveBy(0, speedy * delta);
         //Actualitza la velocitat vertical amb la gravetat

@@ -3,6 +3,7 @@ package com.mygdx.game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
@@ -25,13 +26,24 @@ public class GameScreen implements Screen {
     Array<Pipe> obstacles;
     long lastObstacleTime;
     float score;
+    private float difficulty = 1.0f;
+    private float difficultyIncreaseRate = 0.1f;
+    // Variables de configuración de la velocidad inicial y el aumento de velocidad
+    private float initialObstacleSpeed = 200; // Velocidad inicial de los obstáculos
+    private float obstacleSpeedIncreaseRate = 400; // Tasa de aumento de velocidad de los obstáculos por unidad de dificultad
+
+    private float initialPlayerSpeed = 400; // Velocidad inicial del jugador
+    private float playerSpeedIncreaseRate = 1000; // Tasa de aumento de velocidad del jugador por unidad de dificultad
+
+    /*
     boolean invincibilityActive;
     private static final float POWER_UP_SPAWN_INTERVAL = 10;
     private long lastPowerUpSpawnTime;
-    private Array<PowerUp> powerUps;
+    //private Array<PowerUp> powerUps;
     private Texture powerUpTexture;
     private float powerUpWidth;
     private float powerUpHeight;
+     */
     public GameScreen(final Bird gam) {
         this.game = gam;
         // create the camera and the SpriteBatch
@@ -48,12 +60,13 @@ public class GameScreen implements Screen {
         obstacles = new Array<Pipe>();
         spawnObstacle();
 
-        score = 0;
-        invincibilityActive = false;
+        //score = 0;
+        //invincibilityActive = false;
 
-        powerUps = new Array<>();
-        lastPowerUpSpawnTime = TimeUtils.nanoTime();
+        //powerUps = new Array<>();
+        //lastPowerUpSpawnTime = TimeUtils.nanoTime();
     }
+    /*
     public class PowerUp extends Actor {
         private Rectangle bounds;
         private Texture texture;
@@ -61,7 +74,6 @@ public class GameScreen implements Screen {
         public PowerUp(Texture texture, float x, float y, float widht, float height){
             this.texture = texture;
             this.setBounds(x, y, widht, height);
-            this.bounds = new Rectangle(x, y, widht, height);
             this.bounds = new Rectangle(x, y, widht, height);
         }
         @Override
@@ -71,18 +83,8 @@ public class GameScreen implements Screen {
         public Rectangle getBounds() {
             return bounds;
         }
-
-
     }
-    public class Obstacle{
-        private float x;
-        private float y;
-        private float width;
-        private float heigth;
-        public Rectangle getBounds() {
-            return new Rectangle(x, y, width, heigth);
-        }
-    }
+     */
 
     private void spawnObstacle() {
         // Calcula la alçada de l'obstacle aleatòriament
@@ -104,20 +106,19 @@ public class GameScreen implements Screen {
         stage.addActor(pipe2);
         lastObstacleTime = TimeUtils.nanoTime();
     }
+    /*
     private void checkPowerUpCollision() {
-        //iteramos sobre los power-ups de invencibilidad y comprobar la colisión con el jugador
-        //podemos usar el método intersects() de la clase Rectangle para detectar la colisión entre el jugador y el power-up
-        for (PowerUp powerUp: powerUps) {
-            if (player.getBounds().overlaps(powerUp.getBounds())){
+        Iterator<PowerUp> iter = powerUps.iterator();
+        while (iter.hasNext()) {
+            PowerUp powerUp = iter.next();
+            if (player.getBounds().overlaps(powerUp.getBounds())) {
                 player.activateInvincibility();
-                powerUp.remove();
+                iter.remove();
             }
         }
     }
 
     private void managePowerUps() {
-        powerUpWidth = 64;
-        powerUpHeight = 64;
         if (TimeUtils.nanoTime() - lastPowerUpSpawnTime > POWER_UP_SPAWN_INTERVAL){
             PowerUp powerUp = new PowerUp(powerUpTexture, MathUtils.random(0, 800), MathUtils.random(0, 480), powerUpWidth, powerUpHeight);
             powerUps.add(powerUp); // Agrega el power-up a la lista de power-ups en el juego
@@ -128,20 +129,15 @@ public class GameScreen implements Screen {
         game.setScreen(new GameOverScreen(game));
     }
     private void checkObstacleCollision() {
-        // Comprueba la colisión entre el jugador y los obstáculos, teniendo en cuenta si el jugador está en estado de invencibilidad
-        for (Pipe obstacle : obstacles) {
-            if (player.getBounds().overlaps(obstacle.getBounds())) {
-                if (!player.isInvincible()) { // Si el jugador no está invencible
-                    // El jugador colisionó con un obstáculo y pierde el juego
-                    gameOver();
-                } else {
-                    // El jugador está invencible, elimina el obstáculo del juego
-                    obstacles.removeValue(obstacle, true);
-                    // Aquí puedes realizar cualquier otra acción necesaria, como reproducir un sonido o mostrar un efecto visual.
-                }
+        for (Iterator<PowerUp> iter = powerUps.iterator(); iter.hasNext();) {
+            PowerUp powerUp = iter.next();
+            if (player.getBounds().overlaps(powerUp.getBounds())) {
+                player.activateInvincibility();
+                iter.remove();
             }
         }
     }
+     */
 
     @Override
     public void render(float delta) {
@@ -167,8 +163,15 @@ public class GameScreen implements Screen {
         game.smallFont.draw(game.batch, "Score: " + (int)score, 10, 470);
         game.batch.end();
 
-        //La puntuació augmenta amb el temps de joc
+        //aumentamos la puntuación con el tiempo
         score += Gdx.graphics.getDeltaTime();
+
+        //actualizamos la dificultat con el tiempo
+        difficulty += difficultyIncreaseRate * delta;
+
+
+        float obstacleSpeed = initialObstacleSpeed + difficulty * obstacleSpeedIncreaseRate;
+        float playerSpeed = initialPlayerSpeed + difficulty * playerSpeedIncreaseRate;
 
         //Actualización ======================================================
         stage.act();
@@ -178,8 +181,6 @@ public class GameScreen implements Screen {
             player.impulso();
             game.manager.get("flap.wav", Sound.class).play();
         }
-
-        dead = false;
 
         // Comprova que el jugador no es surt de la pantalla.
         // Si surt per la part inferior, game over
@@ -208,13 +209,17 @@ public class GameScreen implements Screen {
                 obstacles.removeValue(pipe, true);
             }
         }
+        //managePowerUps();
+        //checkPowerUpCollision();
+        //checkObstacleCollision();
 
-        checkPowerUpCollision();
-        managePowerUps();
-        checkObstacleCollision();
-
-        if(dead)
-        {
+        if (dead) {
+            if (player.isInvincible()) {
+                player.setColor(Color.RED);
+            } else {
+                // Restaura la apariencia visual normal del jugador
+                player.setColor(Color.BLACK); // Restaura el color del jugador a negro (o su color original)
+            }
             game.manager.get("fail.wav", Sound.class).play();
             game.lastScore = (int)score;
             if(game.lastScore > game.topScore)
@@ -223,6 +228,7 @@ public class GameScreen implements Screen {
             game.setScreen(new GameOverScreen(game));
             dispose();
         }
+
     }
     @Override
     public void resize(int width, int height) {
